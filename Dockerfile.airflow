@@ -1,0 +1,22 @@
+FROM apache/airflow:2.8.0-python3.11
+
+# Копируем requirements и устанавливаем зависимости
+COPY airflow/requirements.txt /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
+
+# Устанавливаем системные зависимости для Selenium
+USER root
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Настраиваем Chrome для headless-режима в Docker
+ENV CHROME_BIN=/usr/bin/chromium \
+    CHROMEDRIVER=/usr/bin/chromedriver \
+    DISPLAY=:99
+
+USER airflow

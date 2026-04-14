@@ -1,0 +1,59 @@
+# --- Секреты и окружение ---
+.env
+*.pem
+*.key
+*.crt
+
+# --- Виртуальные окружения ---
+venv/
+env/
+.venv/
+Scripts/
+Include/
+Lib/
+pyvenv.cfg
+
+# --- Скомпилированные файлы ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Логи и временные файлы ---
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+*.bak
+
+# --- Данные (реальные отзывы) ---
+parsers/data/*.csv
+!parsers/data/.gitkeep
+
+# --- Системные файлы ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# --- IDE и редакторы ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Docker (опционально, если образы не нужны в репо) ---
+*.dockerignore
+!.dockerignore
+
+# --- Airflow (локальные артефакты) ---
+airflow/logs/
+airflow/plugins/__pycache__/
+airflow/.airflow.db
+
+# --- Тестовые и отладочные файлы ---
+pytest_cache/
+.coverage
+htmlcov/

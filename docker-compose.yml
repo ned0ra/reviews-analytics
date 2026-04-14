@@ -1,0 +1,123 @@
+# docker-compose.yml для проекта парсинга и аналитики отзывов
+# Расположение: project/docker-compose.yml
+
+services:
+  # PostgreSQL: база данных для отзывов и метаданных Airflow
+  postgres:
+    image: postgres:15
+    container_name: reviews-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: reviews_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reviews_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - airflow_net
+
+  # Airflow Webserver: веб-интерфейс для управления DAG
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-webserver
+    restart: unless-stopped
+    environment:
+      # Настройки Airflow
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres123@postgres:5432/reviews_db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__WEBSERVER__SECRET_KEY=dev-secret-key-change-in-prod
+      
+      # YandexGPT
+      - YC_FOLDER_ID=${YC_FOLDER_ID}
+      - YC_API_KEY=${YC_API_KEY}
+      
+      # Настройки подключения к ПРОЕКТНОЙ БД
+      - DB_HOST=${DB_HOST:-89.223.65.229}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-msod_database}
+      - DB_USER=${DB_USER:-u_reviews_parser}
+      - DB_PASSWORD=${DB_PASSWORD:-H4d00p_Spark$}
+      - DB_SCHEMA=${DB_SCHEMA:-reviews_parser}
+      - DB_SSLMODE=${DB_SSLMODE:-prefer}
+    ports:
+      - "8080:8080"
+    volumes:
+      # путь к DAG-файлам
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      # Kод проекта для импорта модулей в DAG
+      - ./database:/opt/project/database
+      - ./parsers:/opt/project/parsers
+      - ./yandexgpt_analyzer.py:/opt/project/yandexgpt_analyzer.py
+      - ./.env:/opt/project/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: webserver
+    networks:
+      - airflow_net
+
+  # Airflow Scheduler: планировщик задач
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-scheduler
+    restart: unless-stopped
+    environment:
+      # Настройки Airflow 
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres123@postgres:5432/reviews_db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__WEBSERVER__SECRET_KEY=dev-secret-key-change-in-prod
+      
+      # YandexGPT
+      - YC_FOLDER_ID=${YC_FOLDER_ID}
+      - YC_API_KEY=${YC_API_KEY}
+      
+      # Настройки подключения к ПРОЕКТНОЙ БД
+      - DB_HOST=${DB_HOST:-89.223.65.229}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-msod_database}
+      - DB_USER=${DB_USER:-u_reviews_parser}
+      - DB_PASSWORD=${DB_PASSWORD:-H4d00p_Spark$}
+      - DB_SCHEMA=${DB_SCHEMA:-reviews_parser}
+      - DB_SSLMODE=${DB_SSLMODE:-prefer}
+    volumes:
+      # Путь к DAG-файлам
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      # Код проекта для импорта
+      - ./database:/opt/project/database
+      - ./parsers:/opt/project/parsers
+      - ./yandexgpt_analyzer.py:/opt/project/yandexgpt_analyzer.py
+      - ./.env:/opt/project/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: scheduler
+    networks:
+      - airflow_net
+
+# Volumes: постоянные данные
+volumes:
+  postgres_data:
+    driver: local
+
+# Networks: изолированная сеть для сервисов
+networks:
+  airflow_net:
+    driver: bridge

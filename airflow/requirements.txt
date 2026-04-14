@@ -1,0 +1,13 @@
+# Airflow dependencies
+apache-airflow==2.8.0
+apache-airflow-providers-postgres==5.8.0
+
+# Проектные зависимости
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+requests==2.31.0
+selenium==4.15.2
+webdriver-manager==4.0.1
+beautifulsoup4==4.12.2
+lxml==4.9.3
+pandas==2.1.3
